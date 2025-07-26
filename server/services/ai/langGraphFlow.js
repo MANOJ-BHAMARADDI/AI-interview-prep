@@ -25,9 +25,12 @@ class InterviewWorkflow {
     }
 
     try {
+      const previousQuestions = this.state.answers.map((a) => a.question);
+
       const question = await this.geminiService.generateQuestion(
         this.state.role,
-        this.state.difficulty
+        this.state.difficulty,
+        previousQuestions
       );
 
       this.state.currentQuestion = question;

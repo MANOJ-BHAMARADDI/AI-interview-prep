@@ -9,10 +9,18 @@ if (!GEMINI_API_KEY) {
 }
 
 // Generate a question
-const generateQuestion = async (role, difficulty) => {
+const generateQuestion = async (role, difficulty, previousQuestions = []) => {
+  const history =
+    previousQuestions.length > 0
+      ? `Here are the questions that have already been asked, do not repeat them:\n- ${previousQuestions.join(
+          "\n- "
+        )}\n\nPlease generate a new, unique question.`
+      : "Please generate the first question.";
+
   const prompt = `
     You are an expert technical interviewer. Generate a ${difficulty} level interview question for a ${role} position.
-    Return only the question without any additional text.
+    ${history}
+    Return only the question text itself without any introductory phrases, labels, or additional text.
   `;
 
   try {

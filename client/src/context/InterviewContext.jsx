@@ -28,10 +28,22 @@ export const InterviewProvider = ({ children }) => {
     setLoading(true);
     try {
       const data = await interviewService.submitAnswer(interviewId, answer);
-      setCurrentInterview((prev) => ({
-        ...prev,
-        ...data,
-      }));
+      setCurrentInterview((prev) => {
+        const updatedInterview = {
+          ...prev,
+          evaluation: data.evaluation,
+          completed: data.completed,
+          progress: data.progress,
+        };
+
+        if (!data.completed && data.nextQuestion) {
+          updatedInterview.question = data.nextQuestion.question;
+          updatedInterview.questionNumber = data.nextQuestion.questionNumber;
+          updatedInterview.totalQuestions = data.nextQuestion.totalQuestions;
+        }
+
+        return updatedInterview;
+      });
       setLoading(false);
       return { success: true, data };
     } catch (err) {

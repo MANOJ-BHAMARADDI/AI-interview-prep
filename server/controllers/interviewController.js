@@ -68,7 +68,7 @@ const startInterview = async (req, res) => {
 
 const submitAnswer = async (req, res) => {
   try {
-    const { interviewId } = req.params;
+    const { id: interviewId } = req.params;
     const { answer } = req.body;
     const userId = req.user.id;
 
@@ -88,10 +88,34 @@ const submitAnswer = async (req, res) => {
       return res.status(404).json({ message: "Interview not found" });
     }
 
-    // Get workflow
-    const workflow = activeInterviews.get(interviewId);
+    // Get workflow from memory or re-create it if it doesn't exist
+    let workflow = activeInterviews.get(interviewId);
     if (!workflow) {
-      return res.status(400).json({ message: "Interview session expired" });
+      console.log("Re-creating workflow for interview:", interviewId);
+      workflow = new InterviewWorkflow({
+        generateQuestion,
+        evaluateAnswer,
+      });
+
+      // Re-hydrate the state
+      workflow.state.role = interview.role;
+      workflow.state.difficulty = interview.difficulty;
+      workflow.state.questionCount = interview.questions.length - 1;
+      workflow.state.currentQuestion =
+        interview.questions[interview.questions.length - 1].question;
+
+      // Re-hydrate the history of answers and evaluations
+      workflow.state.answers = interview.questions
+        .filter((q) => q.userAnswer)
+        .map((q) => ({
+          question: q.question,
+          answer: q.userAnswer,
+        }));
+      workflow.state.evaluations = interview.questions
+        .filter((q) => q.evaluation)
+        .map((q) => q.evaluation);
+
+      activeInterviews.set(interviewId, workflow);
     }
 
     // Evaluate answer
